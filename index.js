@@ -13,7 +13,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 // Endpoint TTN uses to send uplinks
 app.post('/ttn', async (req, res) => {
   try {
-    const uplink = req.body.data.uplink_message;
+    const uplink = req.body.uplink_message;
     const decoded = uplink.decoded_payload;
     const device = req.body.end_device_ids.device_id;
 
