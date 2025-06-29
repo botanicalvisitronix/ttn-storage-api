@@ -5,19 +5,33 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 app.use(bodyParser.json());
 
-// Load from Render environment variables
+// Supabase credentials from environment variables
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const API_TOKEN = process.env.API_TOKEN;
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Endpoint TTN uses to send uplinks
+// Middleware to authenticate API token
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token === API_TOKEN) {
+    next();
+  } else {
+    res.status(401).json({ error: 'Unauthorized' });
+  }
+}
+
+// Endpoint TTN calls
 app.post('/ttn', async (req, res) => {
   try {
     const uplink = req.body.uplink_message;
     const decoded = uplink.decoded_payload;
     const device = req.body.end_device_ids.device_id;
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('sensor_data')
       .insert({
         device_id: device,
@@ -31,15 +45,15 @@ app.post('/ttn', async (req, res) => {
 
     if (error) throw error;
 
-    res.status(200).send({ success: true });
+    res.status(200).json({ success: true });
   } catch (err) {
-    console.error(' Error receiving TTN uplink:', err.message);
-    res.status(500).send({ error: err.message });
+    console.error('Error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Public endpoint for latest sensor status
-app.get('/device/:device/status', async (req, res) => {
+// Protected endpoint
+app.get('/device/:device/status', authenticateToken, async (req, res) => {
   const device = req.params.device;
 
   const { data, error } = await supabase
@@ -55,8 +69,7 @@ app.get('/device/:device/status', async (req, res) => {
   res.json(data[0]);
 });
 
-// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(` API server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
