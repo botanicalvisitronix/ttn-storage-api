@@ -28,6 +28,11 @@ function authenticateToken(req, res, next) {
 app.post('/ttn', async (req, res) => {
   try {
     const uplink = req.body.uplink_message;
+    if (!uplink || !uplink.decoded_payload) {
+      console.error('Invalid uplink payload:', JSON.stringify(req.body, null, 2));
+      return res.status(400).json({ error: 'Invalid uplink payload' });
+    }
+
     const decoded = uplink.decoded_payload;
     const device = req.body.end_device_ids.device_id;
 
