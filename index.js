@@ -69,7 +69,7 @@ app.get('/device/:device/status', authenticateToken, async (req, res) => {
   res.json(data[0]);
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
